@@ -1,4 +1,4 @@
-table "pf_purchase_request" {
+table "purchase_request" {
   auth = false
 
   schema {
@@ -11,7 +11,7 @@ table "pf_purchase_request" {
       table = "user"
     }
     int vendor_id? {
-      table = "pf_vendor"
+      table = "vendor"
     }
     enum status?="draft" {
       values = ["draft", "submitted", "in_review", "approved", "rejected", "cancelled"]

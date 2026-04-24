@@ -1,6 +1,6 @@
 // List vendors
 query "vendors" verb=GET {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -11,8 +11,8 @@ query "vendors" verb=GET {
   }
 
   stack {
-    db.query "pf_vendor" {
-      where = $db.pf_vendor.status ==? $input.status && $db.pf_vendor.name includes? $input.q
+    db.query "vendor" {
+      where = $db.vendor.status ==? $input.status && $db.vendor.name includes? $input.q
       sort = {name: "asc"}
       return = {
         type: "list",

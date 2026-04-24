@@ -1,6 +1,6 @@
 // Submit a draft request for review
 query "requests/{request_id}/submit" verb=POST {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -8,7 +8,7 @@ query "requests/{request_id}/submit" verb=POST {
   }
 
   stack {
-    db.get "pf_purchase_request" {
+    db.get "purchase_request" {
       field_name = "id"
       field_value = $input.request_id
     } as $request
@@ -23,7 +23,7 @@ query "requests/{request_id}/submit" verb=POST {
       error = "Only draft requests can be submitted"
     }
 
-    db.edit "pf_purchase_request" {
+    db.edit "purchase_request" {
       field_name = "id"
       field_value = $input.request_id
       data = {

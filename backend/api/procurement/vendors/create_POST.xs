@@ -1,6 +1,6 @@
 // Create a vendor
 query "vendors" verb=POST {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -12,7 +12,7 @@ query "vendors" verb=POST {
   }
 
   stack {
-    db.add "pf_vendor" {
+    db.add "vendor" {
       data = {
         name         : $input.name,
         contact_email: $input.contact_email,

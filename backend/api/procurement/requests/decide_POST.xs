@@ -1,6 +1,6 @@
 // Approver decides on their approval step: approve or reject
 query "requests/{request_id}/decide" verb=POST {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -15,8 +15,8 @@ query "requests/{request_id}/decide" verb=POST {
       error = "Decision must be 'approve' or 'reject'"
     }
 
-    db.query "pf_approval_step" {
-      where = $db.pf_approval_step.request_id == $input.request_id && $db.pf_approval_step.approver_id == $auth.id && $db.pf_approval_step.status == "pending"
+    db.query "approval_step" {
+      where = $db.approval_step.request_id == $input.request_id && $db.approval_step.approver_id == $auth.id && $db.approval_step.status == "pending"
       sort = {sequence: "asc"}
       return = {type: "single"}
     } as $my_step
@@ -33,7 +33,7 @@ query "requests/{request_id}/decide" verb=POST {
       }
     }
 
-    db.edit "pf_approval_step" {
+    db.edit "approval_step" {
       field_name = "id"
       field_value = $my_step.id
       data = {
@@ -45,7 +45,7 @@ query "requests/{request_id}/decide" verb=POST {
 
     conditional {
       if ($input.decision == "reject") {
-        db.edit "pf_purchase_request" {
+        db.edit "purchase_request" {
           field_name = "id"
           field_value = $input.request_id
           data = {
@@ -56,14 +56,14 @@ query "requests/{request_id}/decide" verb=POST {
         }
       }
       else {
-        db.query "pf_approval_step" {
-          where = $db.pf_approval_step.request_id == $input.request_id && $db.pf_approval_step.status == "pending"
+        db.query "approval_step" {
+          where = $db.approval_step.request_id == $input.request_id && $db.approval_step.status == "pending"
           return = {type: "count"}
         } as $remaining
 
         conditional {
           if ($remaining == 0) {
-            db.edit "pf_purchase_request" {
+            db.edit "purchase_request" {
               field_name = "id"
               field_value = $input.request_id
               data = {
@@ -74,7 +74,7 @@ query "requests/{request_id}/decide" verb=POST {
             }
           }
           else {
-            db.edit "pf_purchase_request" {
+            db.edit "purchase_request" {
               field_name = "id"
               field_value = $input.request_id
               data = {
@@ -87,7 +87,7 @@ query "requests/{request_id}/decide" verb=POST {
       }
     }
 
-    db.get "pf_purchase_request" {
+    db.get "purchase_request" {
       field_name = "id"
       field_value = $input.request_id
     } as $final

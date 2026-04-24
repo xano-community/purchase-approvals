@@ -1,13 +1,13 @@
 // Requests pending the current user's approval
 query "requests/my-pending" verb=GET {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {}
 
   stack {
-    db.query "pf_approval_step" {
-      where = $db.pf_approval_step.approver_id == $auth.id && $db.pf_approval_step.status == "pending"
+    db.query "approval_step" {
+      where = $db.approval_step.approver_id == $auth.id && $db.approval_step.status == "pending"
       sort = {created_at: "desc"}
     } as $pending_steps
 
@@ -15,7 +15,7 @@ query "requests/my-pending" verb=GET {
 
     foreach ($pending_steps) {
       each as $step {
-        db.get "pf_purchase_request" {
+        db.get "purchase_request" {
           field_name = "id"
           field_value = $step.request_id
         } as $req

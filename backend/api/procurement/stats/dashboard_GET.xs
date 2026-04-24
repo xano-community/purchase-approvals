@@ -1,38 +1,38 @@
 // Dashboard for purchasing: counts and spend
 query "stats/dashboard" verb=GET {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {}
 
   stack {
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status == "draft"
+    db.query "purchase_request" {
+      where = $db.purchase_request.status == "draft"
       return = {type: "count"}
     } as $draft_count
 
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status == "submitted"
+    db.query "purchase_request" {
+      where = $db.purchase_request.status == "submitted"
       return = {type: "count"}
     } as $submitted_count
 
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status == "in_review"
+    db.query "purchase_request" {
+      where = $db.purchase_request.status == "in_review"
       return = {type: "count"}
     } as $in_review_count
 
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status == "approved"
+    db.query "purchase_request" {
+      where = $db.purchase_request.status == "approved"
       return = {type: "count"}
     } as $approved_count
 
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status == "rejected"
+    db.query "purchase_request" {
+      where = $db.purchase_request.status == "rejected"
       return = {type: "count"}
     } as $rejected_count
 
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status == "approved"
+    db.query "purchase_request" {
+      where = $db.purchase_request.status == "approved"
     } as $approved_requests
 
     var $approved_spend { value = 0 }

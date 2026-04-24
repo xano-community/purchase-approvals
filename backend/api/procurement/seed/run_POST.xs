@@ -1,17 +1,17 @@
-// Seed ProcureFlow with demo vendors and purchase requests. Idempotent.
+// Seed Purchase Approvals with demo vendors and purchase requests. Idempotent.
 query "seed" verb=POST {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
 
   input {}
 
   stack {
-    db.query "pf_purchase_request" {
+    db.query "purchase_request" {
       return = {type: "count"}
     } as $existing
 
     precondition ($existing == 0) {
       error_type = "inputerror"
-      error = "ProcureFlow data already seeded."
+      error = "Purchase Approvals data already seeded."
     }
 
     var $seed_users {
@@ -61,14 +61,14 @@ query "seed" verb=POST {
 
     foreach ($vendor_seeds) {
       each as $v {
-        db.get "pf_vendor" {
+        db.get "vendor" {
           field_name = "name"
           field_value = $v.name
         } as $existing_v
 
         conditional {
           if ($existing_v == null) {
-            db.add "pf_vendor" {
+            db.add "vendor" {
               data = {
                 name         : $v.name,
                 contact_email: $v.email,
@@ -112,7 +112,7 @@ query "seed" verb=POST {
           field_value = $r.req
         } as $requester
 
-        db.get "pf_vendor" {
+        db.get "vendor" {
           field_name = "name"
           field_value = $r.vendor
         } as $vendor
@@ -138,7 +138,7 @@ query "seed" verb=POST {
           }
         }
 
-        db.add "pf_purchase_request" {
+        db.add "purchase_request" {
           data = {
             title       : $r.title,
             justification: ("Standard " ~ $r.dept ~ " operating expense. See attached for vendor quote."),
@@ -154,7 +154,7 @@ query "seed" verb=POST {
 
         foreach ($r.items) {
           each as $it {
-            db.add "pf_request_line_item" {
+            db.add "purchase_line_item" {
               data = {
                 request_id : $request.id,
                 description: $it.description,
@@ -189,7 +189,7 @@ query "seed" verb=POST {
               }
             }
 
-            db.add "pf_approval_step" {
+            db.add "approval_step" {
               data = {
                 request_id : $request.id,
                 approver_id: $approver.id,

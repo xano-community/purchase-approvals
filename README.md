@@ -1,6 +1,6 @@
-# ProcureFlow
+# Purchase Approvals
 
-Purchase requisition and multi-step approval workflow built on Xano. Backend is XanoScript you push to your own Xano instance; frontend is a single-file HTML app that asks for your instance's base URL the first time it loads.
+A purchase requisition and multi-step approval workflow built on Xano. Backend is XanoScript you push to your own Xano instance; frontend is a single-file HTML app that asks for your instance's base URL the first time it loads.
 
 A requester drafts a purchase request with line items and an ordered list of approvers, submits it, and each approver in sequence either approves or rejects. A single rejection kills the whole request; all approvals must pass for the request to reach `approved` status. Totals roll up from line items automatically.
 
@@ -9,11 +9,11 @@ A requester drafts a purchase request with line items and an ordered list of app
 ```
 backend/            # XanoScript — push to your Xano workspace
   workspace/
-  table/            # user, pf_vendor, pf_purchase_request,
-                    # pf_request_line_item, pf_approval_step
+  table/            # user, vendor, purchase_request,
+                    # purchase_line_item, approval_step
   api/
     enterprise_auth/  # signup, login, me, users
-    procureflow/      # vendors, requests (with submit/decide/my-pending), stats, seed
+    procurement/      # vendors, requests (with submit/decide/my-pending), stats, seed
 frontend/
   index.html        # single-file static app
 ```
@@ -33,7 +33,7 @@ xano workspace:push
 ### 2. Seed demo data
 
 ```bash
-curl -X POST https://YOUR-INSTANCE.n7d.xano.io/api:procureflow/seed \
+curl -X POST https://YOUR-INSTANCE.n7d.xano.io/api:purchase-approvals/seed \
   -d '{}' -H 'Content-Type: application/json'
 ```
 
@@ -70,25 +70,25 @@ POST   /api:enterprise-auth/login          { email, password }
 GET    /api:enterprise-auth/me
 GET    /api:enterprise-auth/users
 
-POST   /api:procureflow/seed
-GET    /api:procureflow/vendors            ?status&q&page&per_page
-POST   /api:procureflow/vendors
-GET    /api:procureflow/requests           ?status&vendor_id&requester_id&page&per_page
-POST   /api:procureflow/requests           { title, vendor_id?, department?, line_items?, approver_ids? }
-GET    /api:procureflow/requests/my-pending
-GET    /api:procureflow/requests/{id}
-POST   /api:procureflow/requests/{id}/submit
-POST   /api:procureflow/requests/{id}/decide   { decision: "approve"|"reject", notes? }
-GET    /api:procureflow/stats/dashboard
+POST   /api:purchase-approvals/seed
+GET    /api:purchase-approvals/vendors            ?status&q&page&per_page
+POST   /api:purchase-approvals/vendors
+GET    /api:purchase-approvals/requests           ?status&vendor_id&requester_id&page&per_page
+POST   /api:purchase-approvals/requests           { title, vendor_id?, department?, line_items?, approver_ids? }
+GET    /api:purchase-approvals/requests/my-pending
+GET    /api:purchase-approvals/requests/{id}
+POST   /api:purchase-approvals/requests/{id}/submit
+POST   /api:purchase-approvals/requests/{id}/decide   { decision: "approve"|"reject", notes? }
+GET    /api:purchase-approvals/stats/dashboard
 ```
 
 ## Schema
 
 - **`user`** — id, name, email (unique), password, created_at — shared auth table with `auth = true`
-- **`pf_vendor`** — id, name, contact_email, contact_phone, address, tax_id, status
-- **`pf_purchase_request`** — id, title, justification, requester_id → user, vendor_id → pf_vendor, status, total_amount, department, submitted_at, decided_at
-- **`pf_request_line_item`** — id, request_id → pf_purchase_request, description, quantity, unit_price, line_total
-- **`pf_approval_step`** — id, request_id → pf_purchase_request, approver_id → user, sequence, status, notes, acted_at
+- **`vendor`** — id, name, contact_email, contact_phone, address, tax_id, status
+- **`purchase_request`** — id, title, justification, requester_id → user, vendor_id → vendor, status, total_amount, department, submitted_at, decided_at
+- **`purchase_line_item`** — id, request_id → purchase_request, description, quantity, unit_price, line_total
+- **`approval_step`** — id, request_id → purchase_request, approver_id → user, sequence, status, notes, acted_at
 
 ## Frontend features
 

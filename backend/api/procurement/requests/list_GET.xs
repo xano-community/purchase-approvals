@@ -1,6 +1,6 @@
 // List purchase requests
 query "requests" verb=GET {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -12,8 +12,8 @@ query "requests" verb=GET {
   }
 
   stack {
-    db.query "pf_purchase_request" {
-      where = $db.pf_purchase_request.status ==? $input.status && $db.pf_purchase_request.vendor_id ==? $input.vendor_id && $db.pf_purchase_request.requester_id ==? $input.requester_id
+    db.query "purchase_request" {
+      where = $db.purchase_request.status ==? $input.status && $db.purchase_request.vendor_id ==? $input.vendor_id && $db.purchase_request.requester_id ==? $input.requester_id
       sort = {created_at: "desc"}
       return = {
         type: "list",

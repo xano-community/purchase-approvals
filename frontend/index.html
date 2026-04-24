@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ProcureFlow</title>
+<title>Purchase Approvals</title>
 <style>
   :root {
     --brand: #b45309;
@@ -65,14 +65,14 @@
 </head>
 <body>
 <header>
-  <h1>ProcureFlow</h1>
+  <h1>Purchase Approvals</h1>
   <div id="user-area"></div>
 </header>
 <div class="container" id="app"></div>
 
 <script>
-const DEFAULT_CFG = { baseUrl: '', authCanonical: 'enterprise-auth', appCanonical: 'procureflow' };
-const LS = { cfg: 'pf:config', token: 'pf:token', user: 'pf:user' };
+const DEFAULT_CFG = { baseUrl: '', authCanonical: 'enterprise-auth', appCanonical: 'purchase-approvals' };
+const LS = { cfg: 'approvals:config', token: 'approvals:token', user: 'approvals:user' };
 
 function getCfg() { const r = localStorage.getItem(LS.cfg); return r ? JSON.parse(r) : null; }
 function saveCfg(c) { localStorage.setItem(LS.cfg, JSON.stringify(c)); }
@@ -103,7 +103,7 @@ function renderSetup() {
   document.getElementById('app').innerHTML = `
     <div class="card" style="max-width:520px;margin:2rem auto">
       <h2 style="margin-top:0">Configure your Xano instance</h2>
-      <p class="muted">Enter the base URL of the Xano instance where you pushed ProcureFlow's backend.</p>
+      <p class="muted">Enter the base URL of the Xano instance where you pushed Purchase Approvals's backend.</p>
       <label>Base URL</label>
       <input id="base-url" value="${e.baseUrl}" placeholder="https://your-instance.xano.io">
       <details style="margin-top:1rem">

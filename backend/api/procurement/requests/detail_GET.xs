@@ -1,6 +1,6 @@
 // Get a purchase request with line items, approvals, vendor
 query "requests/{request_id}" verb=GET {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -8,7 +8,7 @@ query "requests/{request_id}" verb=GET {
   }
 
   stack {
-    db.get "pf_purchase_request" {
+    db.get "purchase_request" {
       field_name = "id"
       field_value = $input.request_id
     } as $request
@@ -24,18 +24,18 @@ query "requests/{request_id}" verb=GET {
       output = ["id", "name", "email"]
     } as $requester
 
-    db.get "pf_vendor" {
+    db.get "vendor" {
       field_name = "id"
       field_value = $request.vendor_id
     } as $vendor
 
-    db.query "pf_request_line_item" {
-      where = $db.pf_request_line_item.request_id == $input.request_id
+    db.query "purchase_line_item" {
+      where = $db.purchase_line_item.request_id == $input.request_id
       sort = {id: "asc"}
     } as $line_items
 
-    db.query "pf_approval_step" {
-      where = $db.pf_approval_step.request_id == $input.request_id
+    db.query "approval_step" {
+      where = $db.approval_step.request_id == $input.request_id
       sort = {sequence: "asc"}
     } as $approval_steps
 

@@ -1,11 +1,11 @@
-table "pf_approval_step" {
+table "approval_step" {
   auth = false
 
   schema {
     int id
     timestamp created_at?=now
     int request_id {
-      table = "pf_purchase_request"
+      table = "purchase_request"
     }
     int approver_id {
       table = "user"

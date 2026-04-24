@@ -1,4 +1,4 @@
-table "pf_vendor" {
+table "vendor" {
   auth = false
 
   schema {

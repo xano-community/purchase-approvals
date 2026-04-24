@@ -1,6 +1,6 @@
 // Create a purchase request with line items and approval chain
 query "requests" verb=POST {
-  api_group = "ProcureFlow"
+  api_group = "Procurement"
   auth = "user"
 
   input {
@@ -33,7 +33,7 @@ query "requests" verb=POST {
       }
     }
 
-    db.add "pf_purchase_request" {
+    db.add "purchase_request" {
       data = {
         title       : $input.title,
         justification: $input.justification,
@@ -49,7 +49,7 @@ query "requests" verb=POST {
       if ($input.line_items != null) {
         foreach ($input.line_items) {
           each as $li {
-            db.add "pf_request_line_item" {
+            db.add "purchase_line_item" {
               data = {
                 request_id : $request.id,
                 description: $li.description,
@@ -68,7 +68,7 @@ query "requests" verb=POST {
         var $seq { value = 1 }
         foreach ($input.approver_ids) {
           each as $approver_id {
-            db.add "pf_approval_step" {
+            db.add "approval_step" {
               data = {
                 request_id : $request.id,
                 approver_id: $approver_id,

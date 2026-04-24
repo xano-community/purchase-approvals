@@ -1,11 +1,11 @@
-table "pf_request_line_item" {
+table "purchase_line_item" {
   auth = false
 
   schema {
     int id
     timestamp created_at?=now
     int request_id {
-      table = "pf_purchase_request"
+      table = "purchase_request"
     }
     text description filters=trim
     int quantity?=1
