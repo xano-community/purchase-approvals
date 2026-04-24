@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProcureFlow</title>
+<style>
+  :root {
+    --brand: #b45309;
+    --brand-hover: #92400e;
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --draft: #6b7280;
+    --submitted: #2563eb;
+    --in_review: #7c3aed;
+    --approved: #16a34a;
+    --rejected: #dc2626;
+    --cancelled: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--brand); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { margin: 0; font-size: 1.25rem; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; }
+  .btn { background: var(--brand); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+  .btn:hover { background: var(--brand-hover); }
+  .btn.secondary { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
+  .btn.success { background: #16a34a; }
+  .btn.danger { background: #dc2626; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  input, textarea, select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+  textarea { min-height: 80px; resize: vertical; }
+  label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.25rem; margin-top: 0.75rem; font-weight: 500; }
+  .row { display: flex; gap: 1rem; }
+  .row > * { flex: 1; }
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .stat .num { font-size: 1.6rem; font-weight: 700; }
+  .stat .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  th { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  tr { cursor: pointer; }
+  tr:hover { background: #f9fafb; }
+  .badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; color: white; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+  .modal { background: white; border-radius: 8px; padding: 2rem; max-width: 720px; width: 90%; max-height: 90vh; overflow-y: auto; }
+  .error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 0.75rem; border-radius: 6px; margin: 1rem 0; font-size: 0.9rem; }
+  .muted { color: var(--muted); }
+  .flex { display: flex; gap: 0.5rem; align-items: center; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+  .tab { padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; color: var(--muted); font-weight: 500; border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+  .line-item { display: grid; grid-template-columns: 3fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem; align-items: end; }
+  .approval-step { display: flex; align-items: center; padding: 0.5rem 0; gap: 0.75rem; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--muted); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
+  .step-num.approved { background: var(--approved); }
+  .step-num.rejected { background: var(--rejected); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ProcureFlow</h1>
+  <div id="user-area"></div>
+</header>
+<div class="container" id="app"></div>
+
+<script>
+const DEFAULT_CFG = { baseUrl: '', authCanonical: 'enterprise-auth', appCanonical: 'procureflow' };
+const LS = { cfg: 'pf:config', token: 'pf:token', user: 'pf:user' };
+
+function getCfg() { const r = localStorage.getItem(LS.cfg); return r ? JSON.parse(r) : null; }
+function saveCfg(c) { localStorage.setItem(LS.cfg, JSON.stringify(c)); }
+function getToken() { return localStorage.getItem(LS.token); }
+function setToken(t) { localStorage.setItem(LS.token, t); }
+function clearAuth() { localStorage.removeItem(LS.token); localStorage.removeItem(LS.user); }
+function getUser() { const r = localStorage.getItem(LS.user); return r ? JSON.parse(r) : null; }
+function setUser(u) { localStorage.setItem(LS.user, JSON.stringify(u)); }
+function normalizeBase(url) { return url.trim().replace(/\/+$/, ''); }
+
+async function api(path, opts = {}) {
+  const cfg = getCfg();
+  if (!cfg) throw new Error('Not configured');
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  const token = getToken();
+  if (token) headers.Authorization = 'Bearer ' + token;
+  const res = await fetch(`${cfg.baseUrl}${path}`, { ...opts, headers });
+  const text = await res.text();
+  let data; try { data = JSON.parse(text); } catch { data = text; }
+  if (!res.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`);
+  return data;
+}
+function appApi(p, opts) { return api(`/api:${getCfg().appCanonical}${p}`, opts); }
+function authApi(p, opts) { return api(`/api:${getCfg().authCanonical}${p}`, opts); }
+
+function renderSetup() {
+  const e = getCfg() || DEFAULT_CFG;
+  document.getElementById('app').innerHTML = `
+    <div class="card" style="max-width:520px;margin:2rem auto">
+      <h2 style="margin-top:0">Configure your Xano instance</h2>
+      <p class="muted">Enter the base URL of the Xano instance where you pushed ProcureFlow's backend.</p>
+      <label>Base URL</label>
+      <input id="base-url" value="${e.baseUrl}" placeholder="https://your-instance.xano.io">
+      <details style="margin-top:1rem">
+        <summary class="muted" style="cursor:pointer;font-size:0.85rem">Advanced: canonicals</summary>
+        <label>Auth canonical</label><input id="auth-canonical" value="${e.authCanonical}">
+        <label>App canonical</label><input id="app-canonical" value="${e.appCanonical}">
+      </details>
+      <div id="setup-error"></div>
+      <button class="btn" style="margin-top:1rem;width:100%" onclick="saveSetup()">Save & Continue</button>
+    </div>`;
+}
+window.saveSetup = function() {
+  const baseUrl = normalizeBase(document.getElementById('base-url').value);
+  if (!baseUrl) return document.getElementById('setup-error').innerHTML = '<div class="error">Base URL required</div>';
+  saveCfg({ baseUrl, authCanonical: document.getElementById('auth-canonical').value.trim(), appCanonical: document.getElementById('app-canonical').value.trim() });
+  route();
+};
+window.clearCfg = function() { localStorage.removeItem(LS.cfg); clearAuth(); route(); };
+
+function renderLogin() {
+  document.getElementById('app').innerHTML = `
+    <div class="card" style="max-width:420px;margin:2rem auto">
+      <h2 style="margin-top:0">Sign in</h2>
+      <label>Email</label><input id="login-email" value="grace.sullivan@acme.enterprise">
+      <label>Password</label><input id="login-password" type="password" value="DemoPass1">
+      <div id="login-error"></div>
+      <button class="btn" style="margin-top:1rem;width:100%" onclick="doLogin()">Sign in</button>
+      <p class="muted" style="margin-top:1rem;font-size:0.85rem;text-align:center"><a href="#" onclick="event.preventDefault();renderSignup()">Create account</a> · <a href="#" onclick="event.preventDefault();clearCfg()">Reconfigure</a></p>
+    </div>`;
+}
+window.doLogin = async function() {
+  try {
+    const res = await authApi('/login', { method: 'POST', body: JSON.stringify({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value }) });
+    setToken(res.authToken); setUser(res.user); route();
+  } catch (e) { document.getElementById('login-error').innerHTML = `<div class="error">${e.message}</div>`; }
+};
+
+function renderSignup() {
+  document.getElementById('app').innerHTML = `
+    <div class="card" style="max-width:420px;margin:2rem auto">
+      <h2 style="margin-top:0">Create account</h2>
+      <label>Name</label><input id="su-name">
+      <label>Email</label><input id="su-email" type="email">
+      <label>Password</label><input id="su-password" type="password">
+      <div id="signup-error"></div>
+      <button class="btn" style="margin-top:1rem;width:100%" onclick="doSignup()">Sign up</button>
+      <p class="muted" style="margin-top:1rem;font-size:0.85rem;text-align:center"><a href="#" onclick="event.preventDefault();renderLogin()">Back to sign in</a></p>
+    </div>`;
+}
+window.doSignup = async function() {
+  try {
+    const res = await authApi('/signup', { method: 'POST', body: JSON.stringify({ name: document.getElementById('su-name').value, email: document.getElementById('su-email').value, password: document.getElementById('su-password').value }) });
+    setToken(res.authToken); setUser(res.user); route();
+  } catch (e) { document.getElementById('signup-error').innerHTML = `<div class="error">${e.message}</div>`; }
+};
+
+async function renderDashboard() {
+  const user = getUser();
+  document.getElementById('user-area').innerHTML = `<span style="margin-right:1rem">${user ? (user.name || user.email) : ''}</span><button class="btn secondary" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);color:white" onclick="logout()">Sign out</button>`;
+  document.getElementById('app').innerHTML = `<div id="stats-wrap"></div><div class="tabs"><button class="tab ${state.tab==='all'?'active':''}" onclick="setTab('all')">All Requests</button><button class="tab ${state.tab==='pending'?'active':''}" onclick="setTab('pending')">My Pending Approvals</button></div><div id="content"><div class="card">Loading…</div></div>`;
+  try {
+    const stats = await appApi('/stats/dashboard');
+    document.getElementById('stats-wrap').innerHTML = `
+      <div class="stats">
+        <div class="stat"><div class="num">${stats.drafts}</div><div class="label">Drafts</div></div>
+        <div class="stat"><div class="num" style="color:var(--submitted)">${stats.submitted}</div><div class="label">Submitted</div></div>
+        <div class="stat"><div class="num" style="color:var(--in_review)">${stats.in_review}</div><div class="label">In Review</div></div>
+        <div class="stat"><div class="num" style="color:var(--approved)">${stats.approved}</div><div class="label">Approved</div></div>
+        <div class="stat"><div class="num" style="color:var(--rejected)">${stats.rejected}</div><div class="label">Rejected</div></div>
+        <div class="stat"><div class="num">$${formatMoney(stats.approved_spend)}</div><div class="label">Approved Spend</div></div>
+      </div>`;
+    if (state.tab === 'all') await renderAllRequests();
+    else await renderPending();
+  } catch (e) { document.getElementById('content').innerHTML = `<div class="error">${e.message}</div>`; }
+}
+window.setTab = function(t) { state.tab = t; renderDashboard(); };
+
+async function renderAllRequests() {
+  const f = state.filters;
+  const qs = new URLSearchParams({ page: state.page, per_page: 20 });
+  if (f.status) qs.set('status', f.status);
+  const reqs = await appApi(`/requests?${qs}`);
+  const rows = reqs.items.map(r => `
+    <tr onclick="showRequest(${r.id})">
+      <td>#${r.id}</td>
+      <td>${escapeHtml(r.title)}</td>
+      <td>${escapeHtml(r.department || '')}</td>
+      <td>$${formatMoney(r.total_amount)}</td>
+      <td><span class="badge" style="background:var(--${r.status})">${r.status.replace('_',' ')}</span></td>
+      <td>${formatDate(r.created_at)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="flex-between" style="margin-bottom:1rem">
+      <h2 style="margin:0">Purchase Requests</h2>
+      <button class="btn" onclick="showNewRequest()">New Request</button>
+    </div>
+    <div class="card" style="padding:1rem">
+      <div style="display:grid;grid-template-columns:1fr auto;gap:0.75rem;margin-bottom:1rem">
+        <select id="f-status" onchange="applyFilters()">
+          <option value="">All statuses</option>
+          ${['draft','submitted','in_review','approved','rejected','cancelled'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
+        </select>
+        <button class="btn secondary" onclick="clearFilters()">Clear</button>
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>Title</th><th>Dept</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan=6 class=muted style="text-align:center;padding:2rem">No requests</td></tr>'}</tbody>
+      </table>
+      ${reqs.pageTotal > 1 ? `<div class="flex-between" style="margin-top:1rem"><span class="muted">Page ${reqs.curPage}/${reqs.pageTotal} · ${reqs.itemsTotal} total</span><div class="flex"><button class="btn secondary" ${!reqs.prevPage?'disabled':''} onclick="changePage(${reqs.curPage-1})">Prev</button><button class="btn secondary" ${!reqs.nextPage?'disabled':''} onclick="changePage(${reqs.curPage+1})">Next</button></div></div>` : ''}
+    </div>`;
+}
+window.applyFilters = function() { state.filters.status = document.getElementById('f-status').value; state.page = 1; renderDashboard(); };
+window.clearFilters = function() { state.filters = {}; state.page = 1; renderDashboard(); };
+window.changePage = function(p) { state.page = p; renderDashboard(); };
+
+async function renderPending() {
+  const pending = await appApi('/requests/my-pending');
+  const rows = pending.map(p => `
+    <tr onclick="showRequest(${p.request.id})">
+      <td>#${p.request.id}</td>
+      <td>${escapeHtml(p.request.title)}</td>
+      <td>$${formatMoney(p.request.total_amount)}</td>
+      <td>Step ${p.sequence}</td>
+      <td><span class="badge" style="background:var(--${p.request.status})">${p.request.status.replace('_',' ')}</span></td>
+    </tr>
+  `).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="padding:1rem">
+      <h2 style="margin-top:0">Awaiting your decision</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Title</th><th>Amount</th><th>Step</th><th>Request Status</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan=5 class=muted style="text-align:center;padding:2rem">Nothing needs your attention</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+window.showNewRequest = async function() {
+  const [vendors, users] = await Promise.all([appApi('/vendors?per_page=100'), authApi('/users')]);
+  const vendorOpts = vendors.items.map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('');
+  const approverOpts = users.map(u => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join('');
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `
+    <div class="modal">
+      <h2 style="margin-top:0">New Purchase Request</h2>
+      <label>Title</label><input id="n-title" placeholder="Q3 Laptop Refresh">
+      <div class="row"><div><label>Vendor</label><select id="n-vendor"><option value="">—</option>${vendorOpts}</select></div><div><label>Department</label><input id="n-dept" placeholder="Engineering"></div></div>
+      <label>Justification</label><textarea id="n-justif" placeholder="Why is this purchase needed?"></textarea>
+      <label>Line items</label>
+      <div id="line-items"></div>
+      <button class="btn secondary" onclick="addLineItem()" style="margin-top:0.5rem">+ Add line item</button>
+      <label style="margin-top:1rem">Approvers (in order)</label>
+      <select id="n-approvers" multiple size="5">${approverOpts}</select>
+      <p class="muted" style="font-size:0.8rem">Cmd/Ctrl-click to select multiple. Order matters.</p>
+      <div id="n-error"></div>
+      <div class="flex" style="justify-content:flex-end;margin-top:1rem">
+        <button class="btn secondary" onclick="this.closest('.modal-backdrop').remove()">Cancel</button>
+        <button class="btn" onclick="submitNewRequest(this, false)">Save Draft</button>
+        <button class="btn success" onclick="submitNewRequest(this, true)">Save & Submit</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  addLineItem();
+};
+window.addLineItem = function() {
+  const wrap = document.getElementById('line-items');
+  const row = document.createElement('div');
+  row.className = 'line-item';
+  row.innerHTML = `
+    <input class="li-desc" placeholder="Description">
+    <input class="li-qty" type="number" min="1" value="1" placeholder="Qty">
+    <input class="li-price" type="number" step="0.01" min="0" placeholder="Unit price">
+    <button class="btn secondary" onclick="this.closest('.line-item').remove()">×</button>`;
+  wrap.appendChild(row);
+};
+window.submitNewRequest = async function(btn, thenSubmit) {
+  const m = btn.closest('.modal-backdrop');
+  const body = {
+    title: m.querySelector('#n-title').value,
+    department: m.querySelector('#n-dept').value,
+    justification: m.querySelector('#n-justif').value
+  };
+  const v = m.querySelector('#n-vendor').value; if (v) body.vendor_id = parseInt(v);
+  body.line_items = Array.from(m.querySelectorAll('.line-item')).map(r => ({
+    description: r.querySelector('.li-desc').value,
+    quantity: parseInt(r.querySelector('.li-qty').value) || 1,
+    unit_price: parseFloat(r.querySelector('.li-price').value) || 0
+  })).filter(li => li.description);
+  body.approver_ids = Array.from(m.querySelector('#n-approvers').selectedOptions).map(o => parseInt(o.value));
+  try {
+    const created = await appApi('/requests', { method: 'POST', body: JSON.stringify(body) });
+    if (thenSubmit) await appApi(`/requests/${created.id}/submit`, { method: 'POST', body: '{}' });
+    m.remove();
+    renderDashboard();
+  } catch (e) { m.querySelector('#n-error').innerHTML = `<div class="error">${e.message}</div>`; }
+};
+
+window.showRequest = async function(id) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<div class="modal">Loading…</div>`;
+  document.body.appendChild(modal);
+  try {
+    const r = await appApi(`/requests/${id}`);
+    const currentUser = getUser();
+    const myPendingStep = (r.approvals || []).find(a => a.status === 'pending' && a.approver && currentUser && a.approver.id === currentUser.id);
+    const stepsHtml = (r.approvals || []).map(a => `
+      <div class="approval-step">
+        <div class="step-num ${a.status}">${a.sequence}</div>
+        <div style="flex:1">
+          <strong>${a.approver ? escapeHtml(a.approver.name) : 'Unknown'}</strong>
+          <span class="muted" style="margin-left:0.5rem;font-size:0.85rem">${a.status}${a.acted_at ? ' · ' + formatDate(a.acted_at) : ''}</span>
+          ${a.notes ? `<div class="muted" style="font-size:0.85rem;margin-top:0.25rem">"${escapeHtml(a.notes)}"</div>` : ''}
+        </div>
+      </div>`).join('');
+    const linesHtml = (r.line_items || []).map(li => `
+      <tr><td>${escapeHtml(li.description)}</td><td>${li.quantity}</td><td>$${formatMoney(li.unit_price)}</td><td>$${formatMoney(li.line_total)}</td></tr>`).join('');
+    modal.querySelector('.modal').innerHTML = `
+      <div class="flex-between">
+        <h2 style="margin:0">#${r.id} · ${escapeHtml(r.title)}</h2>
+        <button class="btn secondary" onclick="this.closest('.modal-backdrop').remove()">Close</button>
+      </div>
+      <div style="margin:0.5rem 0 1rem"><span class="badge" style="background:var(--${r.status})">${r.status.replace('_',' ')}</span>
+        ${r.department ? `<span class="muted" style="margin-left:0.5rem;font-size:0.85rem">· ${escapeHtml(r.department)}</span>` : ''}</div>
+      <p class="muted">${escapeHtml(r.justification || '')}</p>
+      <div class="row" style="margin-top:1rem">
+        <div><strong>Requester:</strong> ${r.requester ? escapeHtml(r.requester.name) : '—'}</div>
+        <div><strong>Vendor:</strong> ${r.vendor && r.vendor.id ? escapeHtml(r.vendor.name) : '—'}</div>
+        <div><strong>Total:</strong> $${formatMoney(r.total_amount)}</div>
+      </div>
+      <h3 style="margin-top:1.5rem">Line items</h3>
+      <table><thead><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Total</th></tr></thead><tbody>${linesHtml || '<tr><td colspan=4 class=muted>No line items</td></tr>'}</tbody></table>
+      <h3 style="margin-top:1.5rem">Approval chain</h3>
+      ${stepsHtml || '<p class="muted">No approvers</p>'}
+      ${r.status === 'draft' ? `<button class="btn" style="margin-top:1rem" onclick="submitRequest(${r.id}, this)">Submit for review</button>` : ''}
+      ${myPendingStep ? `
+        <h3 style="margin-top:1.5rem">Your decision</h3>
+        <label>Notes</label>
+        <textarea id="decide-notes" placeholder="Optional comments"></textarea>
+        <div class="flex" style="justify-content:flex-end;margin-top:0.5rem">
+          <button class="btn danger" onclick="decideRequest(${r.id}, 'reject', this)">Reject</button>
+          <button class="btn success" onclick="decideRequest(${r.id}, 'approve', this)">Approve</button>
+        </div>
+      ` : ''}`;
+  } catch (e) { modal.querySelector('.modal').innerHTML = `<div class="error">${e.message}</div>`; }
+};
+window.submitRequest = async function(id, btn) {
+  try {
+    await appApi(`/requests/${id}/submit`, { method: 'POST', body: '{}' });
+    btn.closest('.modal-backdrop').remove();
+    renderDashboard();
+  } catch (e) { alert(e.message); }
+};
+window.decideRequest = async function(id, decision, btn) {
+  const m = btn.closest('.modal-backdrop');
+  const notes = m.querySelector('#decide-notes').value;
+  try {
+    await appApi(`/requests/${id}/decide`, { method: 'POST', body: JSON.stringify({ decision, notes }) });
+    m.remove();
+    renderDashboard();
+  } catch (e) { alert(e.message); }
+};
+
+window.logout = function() { clearAuth(); route(); };
+
+function escapeHtml(s) { return s === null || s === undefined ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function formatDate(ms) { return ms ? new Date(ms).toLocaleString() : ''; }
+function formatMoney(n) { return (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+const state = { page: 1, filters: {}, tab: 'all' };
+
+function route() {
+  document.getElementById('user-area').innerHTML = '';
+  if (!getCfg()) return renderSetup();
+  if (!getToken()) return renderLogin();
+  renderDashboard();
+}
+route();
+</script>
+</body>
+</html>
