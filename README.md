@@ -37,7 +37,7 @@ curl -X POST https://YOUR-INSTANCE.n7d.xano.io/api:purchase-approvals/seed \
   -d '{}' -H 'Content-Type: application/json'
 ```
 
-Creates 8 users, 8 real-world vendors (Apple Business, Dell, AWS, Atlassian, WeWork, Cisco…), and 10 purchase requests in varied states (draft, submitted, in_review, approved, rejected) with line items and multi-step approval chains. All seeded users share password `DemoPass1`. Idempotent.
+Creates 8 users, 8 real-world vendors (Apple Business, Dell, AWS, Atlassian, WeWork, Cisco…), and 10 purchase requests in varied states (draft, submitted, in_review, approved, rejected) with line items and multi-step approval chains. All seeded users share password `DemoPass1`. Run once — returns an error if any purchase requests already exist.
 
 Log in as `grace.sullivan@acme.enterprise` / `DemoPass1` — Grace sits on most approval chains, so her "My Pending Approvals" tab has plenty to act on out of the box.
 
@@ -62,7 +62,7 @@ draft ─submit──▶ submitted ─first approval──▶ in_review ─all a
 
 ## API surface
 
-All endpoints except `/seed` require `Authorization: Bearer <token>`.
+All endpoints except `/signup`, `/login`, and `/seed` require `Authorization: Bearer <token>`.
 
 ```
 POST   /api:enterprise-auth/signup         { name, email, password }
