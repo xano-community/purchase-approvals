@@ -138,7 +138,6 @@ table "vendor" {
 }
 ---
 api_group EnterpriseAuth {
-  canonical = "enterprise-auth"
   description = "Shared authentication for HelpDesk Pro, AssetVault, and Purchase Approvals"
   tags = ["auth", "shared"]
 }
@@ -277,7 +276,6 @@ query "users" verb=GET {
 }
 ---
 api_group Procurement {
-  canonical = "purchase-approvals"
   description = "Purchase Approvals - Purchase requisition and approval workflow"
   tags = ["procurement", "finance", "approvals"]
 }
